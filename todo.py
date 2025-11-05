@@ -1,4 +1,4 @@
-""" this script provides a command-line interface TODO functionality.
+""" this script provides a command-line interface TODO List functionality.
 
 """
 import os
@@ -9,36 +9,33 @@ import fileinput
 file_path = os.path.dirname(__file__) + '\\tasklist.txt'
 tasks = []
 
-# print(sys.argv[1]) # always a string
+# sys.argv is always a string
 def main():
 	if len(sys.argv) < 2: sys.exit('No matching argument found. Try "help".')
 
-	match sys.argv[1]:
+	match sys.argv[1].lower():
 		case 'add':
-			...
+			if len(sys.argv) < 3: sys.exit('Please provide a task description.')
+			add(sys.argv[2])
 		case 'list':
 			todo_list()
 		case 'done':
-			if len(sys.argv) < 3:
-				print('Please provide an id to mark as complete.')
-			else:
-				mark_done(sys.argv[2])
+			if len(sys.argv) < 3: sys.exit('Please provide an id to mark as complete.')
+			mark_done(sys.argv[2])
 		case 'undone':
-			if len(sys.argv) < 3:
-				print('Please provide an id to mark as not complete.')
-			else:
-				mark_undone(sys.argv[2])
+			if len(sys.argv) < 3: sys.exit('Please provide an id to mark as not complete.')
+			mark_undone(sys.argv[2])
 		case 'delete':
-			if len(sys.argv) < 3:
-				print('Please provide an id to delete.')
-			else:
-				delete(sys.argv[2])
+			if len(sys.argv) < 3: sys.exit('Please provide an id to delete.')
+			delete(sys.argv[2])
 		case 'clear':
-			...
+			if input('⚠ Are you sure you want to clear ALL tasks? Type "Y" to confirm: ') == 'Y':
+				clear_all()
 		case 'search':
-			...
+			if len(sys.argv) < 3: sys.exit('Please provide a search string.')
+			todo_list(sys.argv[2].lower())
 		case 'stats':
-			...
+			stats()
 		case 'help':
 			print("""
 				Supported commands: 
@@ -52,20 +49,23 @@ def main():
 		case _:
 			sys.exit('No matching argument found. Try "help".')
 
-	# print(sys.argv[1].lower())
 
-	# timestamp = datetime.now()
+# action functions
+def add(descr):
+	tasks = get_tasks()
+	next_id = int(tasks[-1]['id'] if len(tasks) > 1 else 0) + 1 # str to int, finally back to str..
 
-def todo_list():
-		tasks = get_tasks()
-		# print(json.dumps(tasks, indent=2))
-		if not tasks: print('No tasks found.')
+	with open(file_path, 'a') as file:
+		file.write(','.join(list(map(str, [next_id, descr, int(datetime.now().timestamp()), 'n']))) + '\n')
+	print('Task added.')
+
+def todo_list(filter=''):
+		tasks = get_tasks(filter)
+		if not tasks or len(tasks) < 2: sys.exit('No tasks found.')
 		for item in tasks:
-			# print( *(list(map(lambda i: i.center(30), item.values()))) )
 			print(item['id'].center(5), item['done'].center(8), item['title'].ljust(60), item['created_at'].center(10))
 
-
-def get_tasks() -> []:
+def get_tasks(filter) -> []:
 	# read file, first line are the headers
 	with open(file_path, 'r', newline='') as file:
 		for line in file:
@@ -77,16 +77,15 @@ def get_tasks() -> []:
 					'created_at': ' ' + items[2].replace('_', ' ').capitalize(),
 					'done': items[3].strip().capitalize(),
 				})
-			else:
+			elif len(items) > 1 and items[1].lower().find(filter) != -1: # search function added here
 				tasks.append({
 					'id': items[0],
 					'title': items[1],
-					'created_at': datetime.fromtimestamp(int(items[2])).strftime('%d-%b-%Y'),
-					'done': '✅' if items[3].strip() == 'y' else '❌', # ⚠
+					'created_at': datetime.fromtimestamp(int(items[2])).strftime('%d-%b-%Y %H:%M'),
+					'done': '✅' if items[3].strip() == 'y' else '❌',
 				})
 	return tasks
 
-# refactor those with message -> argument
 def mark_done(id):
 	if replace_in_file(file_path, id, 'y'):
 		print(f'Task {id} marked as complete.')
@@ -111,11 +110,22 @@ def replace_in_file(fpath, id, new_value, index=3) -> bool:
 					items[index] = str(new_value)
 					print(','.join(items))
 				else:
-					print('', end='')
-				result = True # action taken
+					print('', end='') # delete line
+				result = True # id found, action taken
 			else:
-				print(line, end='')
+				print(line, end='') # don't change the line
 	return result
+
+def clear_all():
+	with open(file_path, 'w') as file:
+		# add headers only
+		file.write('id,title,created_at,done\n')
+	print('All tasks cleared. You will regret this!')
+
+def stats():
+	aggregated_list = [1 if t['done'] == '✅' else 0 for t in get_tasks()[1:]] # heheh
+	print(f'Done: {aggregated_list.count(1)}, Pending: {aggregated_list.count(0)}')
+
 
 if __name__ == '__main__':
 	main()
