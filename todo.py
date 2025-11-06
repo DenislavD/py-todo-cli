@@ -1,5 +1,5 @@
 """ this script provides a command-line interface TODO List functionality.
-
+author: DenislavD
 """
 import os
 import sys
@@ -12,28 +12,29 @@ tasks = []
 # sys.argv is always a string
 def main():
 	if len(sys.argv) < 2: sys.exit('No matching argument found. Try "help".')
+	opt_arg = sys.argv[2] if len(sys.argv) >= 3 else None
 
 	match sys.argv[1].lower():
-		case 'add':
-			if len(sys.argv) < 3: sys.exit('Please provide a task description.')
-			add(sys.argv[2])
 		case 'list':
 			todo_list()
+		case 'add':
+			if not opt_arg: sys.exit('Please provide a task description.')
+			add(opt_arg)
 		case 'done':
-			if len(sys.argv) < 3: sys.exit('Please provide an id to mark as complete.')
-			mark_done(sys.argv[2])
+			if not opt_arg: sys.exit('Please provide an id to mark as complete.')
+			replace_in_file(opt_arg, 3, 'y', f'Task {opt_arg} marked as complete.')
 		case 'undone':
-			if len(sys.argv) < 3: sys.exit('Please provide an id to mark as not complete.')
-			mark_undone(sys.argv[2])
+			if not opt_arg: sys.exit('Please provide an id to mark as not complete.')
+			replace_in_file(opt_arg, 3, 'n', f'Task {opt_arg} marked as not complete.')
 		case 'delete':
-			if len(sys.argv) < 3: sys.exit('Please provide an id to delete.')
-			delete(sys.argv[2])
+			if not opt_arg: sys.exit('Please provide an id to delete.')
+			replace_in_file(opt_arg, -1, '', f'Task {opt_arg} deleted!')
+		case 'search':
+			if not opt_arg: sys.exit('Please provide a search string.')
+			todo_list(opt_arg.lower())
 		case 'clear':
 			if input('⚠ Are you sure you want to clear ALL tasks? Type "Y" to confirm: ') == 'Y':
 				clear_all()
-		case 'search':
-			if len(sys.argv) < 3: sys.exit('Please provide a search string.')
-			todo_list(sys.argv[2].lower())
 		case 'stats':
 			stats()
 		case 'help':
@@ -65,7 +66,8 @@ def todo_list(filter=''):
 		for item in tasks:
 			print(item['id'].center(5), item['done'].center(8), item['title'].ljust(60), item['created_at'].center(10))
 
-def get_tasks(filter) -> []:
+def get_tasks(filter='') -> []:
+	tasks = []
 	# read file, first line are the headers
 	with open(file_path, 'r', newline='') as file:
 		for line in file:
@@ -86,23 +88,10 @@ def get_tasks(filter) -> []:
 				})
 	return tasks
 
-def mark_done(id):
-	if replace_in_file(file_path, id, 'y'):
-		print(f'Task {id} marked as complete.')
-
-def mark_undone(id):
-	if replace_in_file(file_path, id, 'n'):
-		print(f'Task {id} marked as not complete.')
-
-def delete(id):
-	if replace_in_file(file_path, id, '', -1):
-		print(f'Task {id} deleted!')
-
-def replace_in_file(fpath, id, new_value, index=3) -> bool:
+def replace_in_file(id, index, new_value, msg):
 	result = False
-
 	# inplace=True redirects STDOUT to the file in question, debug with False
-	with fileinput.input(fpath, inplace=True) as file:
+	with fileinput.input(file_path, inplace=True) as file:
 		for line in file:
 			items = line.split(',')
 			if items[0] == id:
@@ -114,7 +103,8 @@ def replace_in_file(fpath, id, new_value, index=3) -> bool:
 				result = True # id found, action taken
 			else:
 				print(line, end='') # don't change the line
-	return result
+
+	print(msg if result else 'Id not found. Please check the task list again.')
 
 def clear_all():
 	with open(file_path, 'w') as file:
