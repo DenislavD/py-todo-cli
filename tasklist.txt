@@ -2,4 +2,4 @@ id,title,created_at,done
 1,Create the add and delete task functions and commit,1762180387,y
 2,,1762190387,n
 3,Weird task,1772190387,y
-4,Pick clothes for meeting with Man,1762349554,n
+4,Pick outfit for event,1762349554,n

@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 import fileinput
 
-file_path = os.path.dirname(__file__) + '\\tasklist.txt'
+file_path = os.path.join(os.path.dirname(__file__), 'tasklist.txt') # bugfix caught by Miranda
 tasks = []
 
 # sys.argv is always a string
@@ -33,7 +33,7 @@ def main():
 			if not opt_arg: sys.exit('Please provide a search string.')
 			todo_list(opt_arg.lower())
 		case 'clear':
-			if input('⚠ Are you sure you want to clear ALL tasks? Type "Y" to confirm: ') == 'Y':
+			if input('⚠ \x1b[91mAre you sure you want to clear ALL tasks? Type "Y" to confirm: \x1b[0m') == 'Y':
 				clear_all()
 		case 'stats':
 			stats()
@@ -64,7 +64,7 @@ def todo_list(filter=''):
 		tasks = get_tasks(filter)
 		if not tasks or len(tasks) < 2: sys.exit('No tasks found.')
 		for item in tasks:
-			print(item['id'].center(5), item['done'].center(8), item['title'].ljust(60), item['created_at'].center(10))
+			print(item['id'].center(5), item['done'].center(4), item['title'].ljust(60), item['created_at'].center(10))
 
 def get_tasks(filter='') -> []:
 	tasks = []
