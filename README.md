@@ -16,4 +16,7 @@ Run with:
 
 <br/>
 
+<img src="https://www.codewars.com/users/justPAYit/badges/small"></img>
+<br/>
+
 ![Codewars](https://github.r2v.ch/codewars?user=justPAYit)
